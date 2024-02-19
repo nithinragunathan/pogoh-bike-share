@@ -40,10 +40,13 @@ stock['global_update_time'] = pd.to_datetime(datetime.utcnow())
 stock['id'] = stock['station_id'].apply(lambda x: str(x)) + '@' + stock['global_update_time'].apply(lambda x: str(x))
 stock.set_index(['id'])
 
-sql = ("SELECT * FROM fact_stock")
-data = pd.read_sql(sql, conn)
 
-stock[data.columns].to_sql("fact_stock", engine, index = False, if_exists = 'append', chunksize = 10)
+cols = ['station_id', 'num_bikes_available', 'num_bikes_disabled',
+       'num_docks_available', 'num_docks_disabled', 'last_reported',
+       'is_charging_station', 'status', 'is_installed', 'is_renting',
+       'is_returning', 'traffic', 'global_update_time', 'id']
+
+stock[cols].to_sql("fact_stock", engine, index = False, if_exists = 'append', chunksize = 10)
 conn.commit()
 conn.close()
 print('Finished refreshing stock @ ', datetime.utcnow())
