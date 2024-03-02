@@ -1,13 +1,9 @@
-import csv
 import requests
 import pandas as pd
-import time
 import pyodbc
 import sqlalchemy as sa
 import urllib
-import time
 from datetime import datetime
-from sqlalchemy import update
 
 server = "database-1.czm6aegec3xq.us-east-2.rds.amazonaws.com"
 database = "pogoh"
@@ -15,7 +11,6 @@ username = "master"
 password = "egahIeae$aevnef#4"
 driver = "{ODBC Driver 18 for SQL Server}"
 connectionString = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password};TrustServerCertificate=yes'
-conn = pyodbc.connect(connectionString)
 
 params = urllib.parse.quote_plus(
     'Driver=%s;' % driver +
@@ -29,24 +24,32 @@ params = urllib.parse.quote_plus(
 
 conn_str = 'mssql+pyodbc:///?odbc_connect=' + params
 
-engine = sa.create_engine(conn_str)
 
-r = requests.get('https://pittsburgh.publicbikesystem.net/customer/gbfs/v2/en/station_status')
-j = r.json()
+def update_stock():
+    conn = pyodbc.connect(connectionString)
+    engine = sa.create_engine(conn_str)
 
-stock = pd.DataFrame(j['data']['stations'])
-stock['last_reported'] = pd.to_datetime(stock['last_reported'], unit = 's')
-stock['global_update_time'] = pd.to_datetime(datetime.utcnow())
-stock['id'] = stock['station_id'].apply(lambda x: str(x)) + '@' + stock['global_update_time'].apply(lambda x: str(x))
-stock.set_index(['id'])
+    r = requests.get('https://pittsburgh.publicbikesystem.net/customer/gbfs/v2/en/station_status')
+    j = r.json()
+
+    stock = pd.DataFrame(j['data']['stations'])
+    stock['last_reported'] = pd.to_datetime(stock['last_reported'], unit = 's')
+    stock['global_update_time'] = pd.to_datetime(datetime.utcnow())
+    stock['id'] = stock['station_id'].apply(lambda x: str(x)) + '@' + stock['global_update_time'].apply(lambda x: str(x))
+    stock.set_index(['id'])
 
 
-cols = ['station_id', 'num_bikes_available', 'num_bikes_disabled',
+    cols = ['station_id', 'num_bikes_available', 'num_bikes_disabled',
        'num_docks_available', 'num_docks_disabled', 'last_reported',
        'is_charging_station', 'status', 'is_installed', 'is_renting',
        'is_returning', 'traffic', 'global_update_time', 'id']
 
-stock[cols].to_sql("fact_stock", engine, index = False, if_exists = 'append', chunksize = 10)
-conn.commit()
-conn.close()
-print('Finished refreshing stock @ ', datetime.utcnow())
+    stock[cols].to_sql("fact_stock", engine, index = False, if_exists = 'append', chunksize = 10)
+    conn.commit()
+    conn.close()
+    print('Finished refreshing stock @ ', datetime.utcnow())
+    return {"statusCode": 200, "body": {"message": 'Finished refreshing stock'}}
+
+if __name__ == '__main__':
+    update_stock()
+    

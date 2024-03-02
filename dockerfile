@@ -2,7 +2,6 @@ FROM python:3
 WORKDIR /app
 ADD requirements.txt .
 ADD update_stock.py .
-ADD requirements.zip .
 
 ARG ENV DEBIAN_FRONTEND noninteractive
 
@@ -25,6 +24,6 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
 # clean the install.
 RUN apt-get -y clean
 
-RUN unzip requirements.zip
+RUN pip install -r requirements.txt
 
-CMD ["python","-i","update_stock.py"]
+CMD ["python","update_stock.py"]
