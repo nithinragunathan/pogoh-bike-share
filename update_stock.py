@@ -1,9 +1,9 @@
 import requests
 import pandas as pd
-import pyodbc
 import sqlalchemy as sa
 import urllib
 from datetime import datetime
+import pyodbc
 
 server = "database-1.czm6aegec3xq.us-east-2.rds.amazonaws.com"
 database = "pogoh"
@@ -26,7 +26,6 @@ conn_str = 'mssql+pyodbc:///?odbc_connect=' + params
 
 
 def update_stock():
-    conn = pyodbc.connect(connectionString)
     engine = sa.create_engine(conn_str)
 
     r = requests.get('https://pittsburgh.publicbikesystem.net/customer/gbfs/v2/en/station_status')
@@ -45,11 +44,6 @@ def update_stock():
        'is_returning', 'traffic', 'global_update_time', 'id']
 
     stock[cols].to_sql("fact_stock", engine, index = False, if_exists = 'append', chunksize = 10)
-    conn.commit()
-    conn.close()
     print('Finished refreshing stock @ ', datetime.utcnow())
-    return {"statusCode": 200, "body": {"message": 'Finished refreshing stock'}}
-
-if __name__ == '__main__':
-    update_stock()
-    
+    return {"statusCode": 200,
+             "body": {"message": 'F

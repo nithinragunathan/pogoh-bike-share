@@ -26,4 +26,4 @@ RUN apt-get -y clean
 
 RUN pip install -r requirements.txt
 
-CMD ["python","update_stock.py"]
+CMD ["python", "update_stock.py", "update_stock"]
