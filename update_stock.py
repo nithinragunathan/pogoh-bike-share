@@ -46,4 +46,8 @@ def update_stock():
     stock[cols].to_sql("fact_stock", engine, index = False, if_exists = 'append', chunksize = 10)
     print('Finished refreshing stock @ ', datetime.utcnow())
     return {"statusCode": 200,
-             "body": {"message": 'F
+             "body": {"message": 'Finished refreshing stock'}}
+
+if __name__ == '__main__':
+    update_stock()
+    
