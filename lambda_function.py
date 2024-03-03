@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import sqlalchemy as sa
 import urllib
+from datetime import timezone
 from datetime import datetime
 import pyodbc
 
@@ -33,7 +34,7 @@ def update_stock():
 
     stock = pd.DataFrame(j['data']['stations'])
     stock['last_reported'] = pd.to_datetime(stock['last_reported'], unit = 's')
-    stock['global_update_time'] = pd.to_datetime(datetime.utcnow())
+    stock['global_update_time'] = pd.to_datetime(datetime.now(timezone.utc))
     stock['id'] = stock['station_id'].apply(lambda x: str(x)) + '@' + stock['global_update_time'].apply(lambda x: str(x))
     stock.set_index(['id'])
 
@@ -44,10 +45,11 @@ def update_stock():
        'is_returning', 'traffic', 'global_update_time', 'id']
 
     stock[cols].to_sql("fact_stock", engine, index = False, if_exists = 'append', chunksize = 10)
-    print('Finished refreshing stock @ ', datetime.utcnow())
+    #print('Finished refreshing stock @ ', datetime.utcnow())
     return {"statusCode": 200,
              "body": {"message": 'Finished refreshing stock'}}
 
-if __name__ == '__main__':
+def handler(event, context):
+    print(event)
     update_stock()
     

@@ -4,3 +4,5 @@ pandas
 sqlalchemy
 datetime
 pyodbc
+boto3
+awslambdaric
