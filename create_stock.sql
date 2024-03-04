@@ -12,5 +12,4 @@ CREATE TABLE fact_stock(
        ,is_returning bit
 	,traffic varchar(50)
 	,global_update_time varchar(25)
-	,id varchar(50) PRIMARY KEY
-);
+	,id varchar(50) 

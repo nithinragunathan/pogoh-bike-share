@@ -50,6 +50,4 @@ def update_stock():
              "body": {"message": 'Finished refreshing stock'}}
 
 def handler(event, context):
-    print(event)
-    update_stock()
-    
+    print
