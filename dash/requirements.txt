@@ -1,2 +1,10 @@
 plotly
 dash
+pytz
+dash
+pandas
+sqlalchemy
+urllib
+timezone
+datetime
+pyodbc
