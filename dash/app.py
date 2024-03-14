@@ -1,26 +1,16 @@
 from dash import Dash, html, dcc
-import plotly.graph_objects as go
+from dash.dependencies import Input, Output
 import plotly.express as px
 import pandas as pd
 import sqlalchemy as sa
 import urllib
-from datetime import timezone
 from datetime import datetime
-import pyodbc
 import pytz
 
-def generate_table(dataframe, max_rows=10):
-    return html.Table([
-        html.Thead(
-            html.Tr([html.Th(col) for col in dataframe.columns])
-        ),
-        html.Tbody([
-            html.Tr([
-                html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
-            ]) for i in range(min(len(dataframe), max_rows))
-        ])
-    ])
+# Create a Dash app
+app = Dash(__name__)
 
+# Data processing
 server = "database-1.czm6aegec3xq.us-east-2.rds.amazonaws.com"
 database = "pogoh"
 username = "master"
@@ -45,13 +35,18 @@ stock = pd.read_sql('select s.station_id, num_bikes_available, num_docks_availab
 
 utc_timezone = pytz.timezone('UTC')
 eastern_timezone = pytz.timezone('US/Eastern')
-stock['last_reported'] = stock['last_reported'].apply(lambda x : utc_timezone.localize(datetime.strptime(x[:-8], '%Y-%m-%d %H:%M:%S')).astimezone(eastern_timezone))
-stock['last_reported'] = stock['last_reported'].apply(lambda x : x.astimezone(eastern_timezone))
-stock['global_update_time'] = stock['global_update_time'].apply(lambda x : utc_timezone.localize(datetime.strptime(x[:-14], '%Y-%m-%d %H:%M:%S')).astimezone(eastern_timezone))
-stock['global_update_time'] = stock['global_update_time'].apply(lambda x : x.astimezone(eastern_timezone))
+stock['last_reported'] = stock['last_reported'].apply(lambda x: utc_timezone.localize(datetime.strptime(x[:-8], '%Y-%m-%d %H:%M:%S')).astimezone(eastern_timezone))
+stock['last_reported'] = stock['last_reported'].apply(lambda x: x.astimezone(eastern_timezone))
+stock['global_update_time'] = stock['global_update_time'].apply(lambda x: utc_timezone.localize(datetime.strptime(x[:-14], '%Y-%m-%d %H:%M:%S')).astimezone(eastern_timezone))
+stock['global_update_time'] = stock['global_update_time'].apply(lambda x: x.astimezone(eastern_timezone))
 
-fig = px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size='num_bikes_available', color='num_bikes_available', mapbox_style = 'carto-darkmatter', zoom = 11.5, animation_frame='global_update_time', size_max=6, range_color=(0, 25),
-                        hover_data={'num_bikes_available': True, 'num_docks_available': True, 'last_reported': True, 'lat': False, 'lon': False, 'global_update_time': False})
+# Define the layout of the Dash app
+app.layout = html.Div([
+    html.H1("POGOH Bikeshare Availability Map"),
+    dcc.Graph(id='map-graph', figure=px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size='num_bikes_available', color='num_bikes_available', mapbox_style='carto-darkmatter', zoom=11.5, animation_frame='global_update_time', size_max=6, range_color=(0, 25),
+                                                        hover_data={'num_bikes_available': True, 'num_docks_available': True, 'last_reported': True, 'lat': False, 'lon': False, 'global_update_time': False}))
+])
 
-
-fig.show()
+# Run the Dash app
+if __name__ == '__main__':
+    app.run_server(debug=True)
