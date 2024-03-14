@@ -2,7 +2,6 @@ from dash import Dash, html, dcc
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
-import pandas as pd
 import sqlalchemy as sa
 import urllib
 from datetime import timezone
@@ -51,24 +50,8 @@ stock['last_reported'] = stock['last_reported'].apply(lambda x : x.astimezone(ea
 stock['global_update_time'] = stock['global_update_time'].apply(lambda x : utc_timezone.localize(datetime.strptime(x[:-14], '%Y-%m-%d %H:%M:%S')).astimezone(eastern_timezone))
 stock['global_update_time'] = stock['global_update_time'].apply(lambda x : x.astimezone(eastern_timezone))
 
-
-
-stock
-
 fig = px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size='num_bikes_available', color='num_bikes_available', mapbox_style = 'carto-darkmatter', zoom = 11.5, animation_frame='global_update_time', size_max=6, range_color=(0, 25),
                         hover_data={'num_bikes_available': True, 'num_docks_available': True, 'last_reported': True, 'lat': False, 'lon': False, 'global_update_time': False})
 
 
 fig.show()
-
-'''
-app = Dash(__name__)
-
-app.layout = html.Div([
-    #generate_table(stock),
-    dcc.Graph(id='example-map',figure=fig)
-])
-
-if __name__ == '__main__':
-    app.run(debug=True)
-'''
