@@ -1,5 +1,4 @@
 FROM python:3.12 as build-image
-# Copy requirements.txt
 
 ARG ENV DEBIAN_FRONTEND noninteractive
 
