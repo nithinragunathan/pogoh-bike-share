@@ -38,7 +38,8 @@ def update_stock():
         stock.set_index('id', inplace=True)
 
         # Filter rows older than 72 hours by global_update_time
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=72)
+        cutoff_time = str(datetime.now(timezone.utc) - timedelta(hours=72))
+        print(cutoff_time)
         stock = stock[stock['global_update_time'] >= cutoff_time]
 
         cols = ['station_id', 'num_bikes_available', 'num_bikes_disabled', 'num_docks_available',
@@ -47,7 +48,8 @@ def update_stock():
 
         # Remove data older than 72 hours from the database
         with engine.connect() as con:
-            con.execute(sa.text('DELETE FROM fact_stock WHERE global_update_time < :cutoff_time'), cutoff_time=cutoff_time)
+            query = sa.text('DELETE FROM fact_stock WHERE global_update_time < :cutoff_time')
+            con.execute(query, {'cutoff_time': cutoff_time})
 
         stock[cols].to_sql("fact_stock", engine, if_exists='append', index=True, chunksize=1000)
 
@@ -60,4 +62,4 @@ def handler(event, context):
     return update_stock()
 
 # Uncomment the line below to test the update_stock function locally
-#handler('event', 'context')
+#print(handler('event', 'context'))
