@@ -2,8 +2,7 @@ import requests
 import pandas as pd
 import sqlalchemy as sa
 import urllib
-from datetime import timezone
-from datetime import datetime
+from datetime import timezone, datetime, timedelta
 import pyodbc
 
 server = "database-1.czm6aegec3xq.us-east-2.rds.amazonaws.com"
@@ -11,8 +10,6 @@ database = "pogoh"
 username = "master"
 password = "egahIeae$aevnef#4"
 driver = "{ODBC Driver 18 for SQL Server}"
-connectionString = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password};TrustServerCertificate=yes'
-
 params = urllib.parse.quote_plus(
     'Driver=%s;' % driver +
     'Server=tcp:%s,1433;' % server +
@@ -25,30 +22,42 @@ params = urllib.parse.quote_plus(
 
 conn_str = 'mssql+pyodbc:///?odbc_connect=' + params
 
-
 def update_stock():
     engine = sa.create_engine(conn_str)
 
-    r = requests.get('https://pittsburgh.publicbikesystem.net/customer/gbfs/v2/en/station_status')
-    j = r.json()
+    try:
+        r = requests.get('https://pittsburgh.publicbikesystem.net/customer/gbfs/v2/en/station_status')
+        r.raise_for_status()
 
-    stock = pd.DataFrame(j['data']['stations'])
-    stock['last_reported'] = pd.to_datetime(stock['last_reported'], unit = 's')
-    stock['global_update_time'] = pd.to_datetime(datetime.now(timezone.utc))
-    stock['id'] = stock['station_id'].apply(lambda x: str(x)) + '@' + stock['global_update_time'].apply(lambda x: str(x))
-    stock.set_index(['id'])
+        j = r.json()
+        stock = pd.DataFrame(j['data']['stations'])
 
+        stock['last_reported'] = pd.to_datetime(stock['last_reported'], unit='s')
+        stock['global_update_time'] = pd.to_datetime(datetime.now(timezone.utc))
+        stock['id'] = stock['station_id'].astype(str) + '@' + stock['global_update_time'].astype(str)
+        stock.set_index('id', inplace=True)
 
-    cols = ['station_id', 'num_bikes_available', 'num_bikes_disabled',
-       'num_docks_available', 'num_docks_disabled', 'last_reported',
-       'is_charging_station', 'status', 'is_installed', 'is_renting',
-       'is_returning', 'traffic', 'global_update_time', 'id']
+        # Filter rows older than 72 hours by global_update_time
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=72)
+        stock = stock[stock['global_update_time'] >= cutoff_time]
 
-    stock[cols].to_sql("fact_stock", engine, index = False, if_exists = 'append', chunksize = 10)
-    #print('Finished refreshing stock @ ', datetime.utcnow())
-    return {"statusCode": 200,
-             "body": {"message": 'Finished refreshing stock'}}
+        cols = ['station_id', 'num_bikes_available', 'num_bikes_disabled', 'num_docks_available',
+                'num_docks_disabled', 'last_reported', 'is_charging_station', 'status', 'is_installed',
+                'is_renting', 'is_returning', 'traffic', 'global_update_time']
+
+        # Remove data older than 72 hours from the database
+        with engine.connect() as con:
+            con.execute(sa.text('DELETE FROM fact_stock WHERE global_update_time < :cutoff_time'), cutoff_time=cutoff_time)
+
+        stock[cols].to_sql("fact_stock", engine, if_exists='append', index=True, chunksize=1000)
+
+        return {"statusCode": 200, "body": {"message": 'Finished refreshing stock'}}
+    except Exception as e:
+        return {"statusCode": 500, "body": {"error": str(e)}}
 
 def handler(event, context):
     print(event)
-    update_stock()
+    return update_stock()
+
+# Uncomment the line below to test the update_stock function locally
+#handler('event', 'context')
