@@ -24,7 +24,7 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
 RUN pip install -r requirements.txt
 
 # Expose the port that the Dash app is running on
-EXPOSE 8050
+EXPOSE 9000
 
 # Run the Dash app when the container launches
 CMD ["python", "app.py"]
