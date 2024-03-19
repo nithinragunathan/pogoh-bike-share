@@ -27,13 +27,6 @@ def update_data():
     try:
         with engine.connect() as conn:
             stock = pd.read_sql('select s.station_id, num_bikes_available, num_docks_available, last_reported, global_update_time, name, lat, lon from dbo.fact_stock fs left join dbo.stations s on fs.station_id = s.station_id;', conn)
-
-        utc_timezone = pytz.timezone('UTC')
-        eastern_timezone = pytz.timezone('US/Eastern')
-        stock['last_reported'] = stock['last_reported'].apply(lambda x: utc_timezone.localize(datetime.strptime(x[:-8], '%Y-%m-%d %H:%M:%S')).astimezone(eastern_timezone))
-        stock['last_reported'] = stock['last_reported'].apply(lambda x: x.astimezone(eastern_timezone))
-        stock['global_update_time'] = stock['global_update_time'].apply(lambda x: utc_timezone.localize(datetime.strptime(x[:-14], '%Y-%m-%d %H:%M:%S')).astimezone(eastern_timezone))
-        stock['global_update_time'] = stock['global_update_time'].apply(lambda x: x.astimezone(eastern_timezone))
         return stock
     except Exception as e:
         print("Error fetching data:", e)
@@ -42,13 +35,13 @@ def update_data():
 def update_map():
     stock = update_data()
 
-    fig = px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size='num_bikes_available', color='num_bikes_available', mapbox_style='carto-positron', size_max=7, range_color=(0, 25), animation_frame='global_update_time',
+    fig = px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size='num_bikes_available', color_continuous_scale = 'greens', color='num_bikes_available', mapbox_style='carto-darkmatter', size_max=7, range_color=(0, 15), animation_frame='global_update_time',
                             hover_data={'num_bikes_available': True, 'num_docks_available': True, 'last_reported': True, 'lat': False, 'lon': False, 'global_update_time': False})
 
     fig.update_layout(mapbox=dict(center={'lat': stock['lat'].mean(), 'lon': stock['lon'].mean()}, zoom=12), margin={"r": 0, "t": 0, "l": 0, "b": 0}, autosize=True, height=750)
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),  # Set margin to zero
-        coloraxis_showscale=False,  # Hide the color legend
+        coloraxis_showscale=True,  # Hide the color legend
     )
     fig["layout"].pop("updatemenus")
 
@@ -72,28 +65,28 @@ def update_map():
 
 
 # Define the layout of the Dash app with a black background
-app.layout = html.Div(
-    children=[
-        dcc.Graph(id='map-graph', figure=update_map()),
-        dcc.Interval(
-            id='interval-component',
-            interval=10*60*1000,  # in milliseconds
-            n_intervals=0
-        )
-    ]
-)
+def layout():
+    return html.Div(
+        children=[
+            dcc.Graph(id='map-graph'),
+            dcc.Interval(
+                id='interval-component',
+                interval=10 * 60 * 1000,  # in milliseconds
+                n_intervals=0
+            )
+        ]
+    )
 
-# Update data and map every 10 min
-@app.callback(Output('map-graph', 'figure'),
-              Input('interval-component', 'n_intervals'))
-def update_every_10_minutes(n):
-    current_time = datetime.now().time()
-    if current_time.minute in {9, 19, 29, 39, 49, 59}:
-        return update_map()
-    else:
-        raise dash.exceptions.PreventUpdate
+app.layout = layout()
+
+# Callback to update the map figure
+@app.callback(
+    Output('map-graph', 'figure'),
+    [Input('interval-component', 'n_intervals')]
+)
+def update_map_figure(n):
+    return update_map()
 
 # Run the Dash app
 if __name__ == '__main__':
-    update_map()
-    app.run_server(debug=True, host='0.0.0.0', port=9000)
+    app.run_server(debug=False, host='0.0.0.0', port=9000)
