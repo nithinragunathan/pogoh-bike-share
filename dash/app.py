@@ -35,10 +35,10 @@ def update_data():
 def update_map():
     stock = update_data()
 
-    fig = px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size='num_bikes_available', color_continuous_scale = 'greens', color='num_bikes_available', mapbox_style='carto-darkmatter', size_max=7, range_color=(0, 15), animation_frame='global_update_time',
+    fig = px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size='num_bikes_available', color_continuous_scale = 'oxy', color='num_bikes_available', mapbox_style='carto-positron', size_max=7, range_color=(0, 15), animation_frame='global_update_time',
                             hover_data={'num_bikes_available': True, 'num_docks_available': True, 'last_reported': True, 'lat': False, 'lon': False, 'global_update_time': False})
 
-    fig.update_layout(mapbox=dict(center={'lat': stock['lat'].mean(), 'lon': stock['lon'].mean()}, zoom=12), margin={"r": 0, "t": 0, "l": 0, "b": 0}, autosize=True, height=750)
+    fig.update_layout(mapbox=dict(center={'lat': 40.4406, 'lon': -79.98}, zoom=11.75), margin={"r": 0, "t": 0, "l": 0, "b": 0}, autosize=True, height=750)
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),  # Set margin to zero
         coloraxis_showscale=True,  # Hide the color legend
@@ -71,7 +71,7 @@ def layout():
             dcc.Graph(id='map-graph'),
             dcc.Interval(
                 id='interval-component',
-                interval=10 * 60 * 1000,  # in milliseconds
+                interval=30 * 60 * 1000,  # in milliseconds
                 n_intervals=0
             )
         ]
