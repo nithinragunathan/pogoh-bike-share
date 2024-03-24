@@ -46,6 +46,8 @@ def update_stock():
         cols = ['station_id', 'num_bikes_available', 'num_bikes_disabled', 'num_docks_available',
                 'num_docks_disabled', 'last_reported', 'is_charging_station', 'status', 'is_installed',
                 'is_renting', 'is_returning', 'traffic', 'global_update_time']
+        
+        #print(stock)
 
         stock[cols].to_sql("fact_stock", engine, if_exists='append', index=True, chunksize=1000)
 

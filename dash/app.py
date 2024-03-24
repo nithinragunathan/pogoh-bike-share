@@ -39,12 +39,23 @@ def update_map(data_type):
     'last_reported': 'Last Reported',
     'global_update_time': 'Global Update Time'})
 
+    # Convert time columns to datetime objects
+    stock['Last Reported'] = pd.to_datetime(stock['Last Reported'], format='%m-%d-%Y %I:%M %p')
+    stock['Global Update Time'] = pd.to_datetime(stock['Global Update Time'], format='%m-%d-%Y %I:%M %p')
+
+    # Sort DataFrame by Global Update Time
+    stock = stock.sort_values(by='Global Update Time')
+
     if data_type == 'bikes':
         size_column = 'Number of Bikes'
         color_column = 'Number of Bikes'
     elif data_type == 'docks':
         size_column = 'Open Docks'
         color_column = 'Open Docks'
+
+    # Formatting the datetime objects for hover labels and slider
+    stock['Last Reported'] = stock['Last Reported'].dt.strftime('%m-%d-%Y %I:%M %p')
+    stock['Global Update Time'] = stock['Global Update Time'].dt.strftime('%m-%d-%Y %I:%M %p')
 
     fig = px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size=size_column, color_continuous_scale='oxy', color=color_column, mapbox_style='carto-darkmatter', size_max=7, range_color=(0, 15), animation_frame='Global Update Time',
                              hover_data={'Number of Bikes': True, 'Open Docks': True, 'Last Reported': True, 'lat': False, 'lon': False, 'Global Update Time': False})
