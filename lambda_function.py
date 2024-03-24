@@ -58,4 +58,4 @@ def handler(event, context):
     return update_stock()
 
 # Uncomment the line below to test the update_stock function locally
-print(handler('event', 'context'))
+#print(handler('event', 'context'))
