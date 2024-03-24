@@ -5,8 +5,7 @@ import plotly.express as px
 import pandas as pd
 import sqlalchemy as sa
 import urllib
-from datetime import datetime
-import pytz
+import plotly.graph_objects as go
 
 # Create a Dash app
 app = Dash(__name__)
@@ -32,61 +31,80 @@ def update_data():
         print("Error fetching data:", e)
         return pd.DataFrame()
 
-def update_map():
+def update_map(data_type):
     stock = update_data()
+    stock = stock.rename(columns={
+    'num_bikes_available': 'Number of Bikes',
+    'num_docks_available': 'Open Docks',
+    'last_reported': 'Last Reported',
+    'global_update_time': 'Global Update Time'})
 
-    fig = px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size='num_bikes_available', color_continuous_scale = 'oxy', color='num_bikes_available', mapbox_style='carto-positron', size_max=7, range_color=(0, 15), animation_frame='global_update_time',
-                            hover_data={'num_bikes_available': True, 'num_docks_available': True, 'last_reported': True, 'lat': False, 'lon': False, 'global_update_time': False})
+    if data_type == 'bikes':
+        size_column = 'Number of Bikes'
+        color_column = 'Number of Bikes'
+    elif data_type == 'docks':
+        size_column = 'Open Docks'
+        color_column = 'Open Docks'
 
+    fig = px.scatter_mapbox(stock, lat='lat', lon='lon', hover_name='name', size=size_column, color_continuous_scale='oxy', color=color_column, mapbox_style='carto-darkmatter', size_max=7, range_color=(0, 15), animation_frame='Global Update Time',
+                             hover_data={'Number of Bikes': True, 'Open Docks': True, 'Last Reported': True, 'lat': False, 'lon': False, 'Global Update Time': False})
     fig.update_layout(mapbox=dict(center={'lat': 40.4406, 'lon': -79.98}, zoom=11.75), margin={"r": 0, "t": 0, "l": 0, "b": 0}, autosize=True, height=750)
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),  # Set margin to zero
         coloraxis_showscale=True,  # Hide the color legend
+        font=dict(family='Futura, sans-serif', color='white'),  # Set font to Futura and color to white
+        plot_bgcolor='black',  # Set background color of the whitespace
+        paper_bgcolor='black',  # Set background color of the paper
+        hoverlabel=dict(font_color='black'),  # Set hover label font color to white
     )
     fig["layout"].pop("updatemenus")
 
-    # Set the initial value of the animation frame slider to its maximum value
-    fig.update_layout(
-        sliders=[{
-            "active": len(fig.frames) - 1,  # Set the active frame to the last frame
-            "steps": [{"args": [[frame.name], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate", }, ], "label": str(frame.name), "method": "animate", } for frame in fig.frames]
-        }],
-    )
+    last_frame_num = len(fig.frames) - 1
 
-    # Update the trace objects with the data from the last frame and customize hovertemplate
-    last_frame_data = fig.frames[-1]["data"]
-    for i, trace in enumerate(fig.data):
-        trace.update(last_frame_data[i])
-        trace.hovertemplate = 'Bikes available: %{customdata[0]}<br>' + \
-                              'Docks available: %{customdata[1]}<br>' + \
-                              'Last reported: %{customdata[2]}<br>'
+    fig.layout['sliders'][0]['active'] = last_frame_num  # Set initial frame to the last frame
+    fig = go.Figure(data=fig['frames'][-1]['data'], frames=fig['frames'], layout=fig.layout)
 
     return fig
 
 
-# Define the layout of the Dash app with a black background
 def layout():
     return html.Div(
+        style={'backgroundColor': 'black', 'padding': '20px', 'height': '90vh', 'width': '80vw', 'font-family': 'Futura, sans-serif', 'margin': '0'},
         children=[
-            dcc.Graph(id='map-graph'),
+            html.H1('POGOH Bikeshare Availability', style={'textAlign': 'center', 'color': '#FFC433', 'margin-bottom': '20px'}),
+
+            html.Div([
+                dcc.RadioItems(
+                    id='toggle-data-type',
+                    options=[
+                        {'label': 'Bikes', 'value': 'bikes'},
+                        {'label': 'Docks', 'value': 'docks'}
+                    ],
+                    value='bikes',  # Default value
+                    labelStyle={'display': 'inline-block', 'margin-right': '10px', 'color': '#FFC433'}  # Change the font color to #FFC433
+                )
+            ], style={'textAlign': 'center', 'margin-bottom': '20px'}),
+            dcc.Graph(id='map-graph', style={'margin': '0'}),
             dcc.Interval(
                 id='interval-component',
                 interval=30 * 60 * 1000,  # in milliseconds
                 n_intervals=0
             )
-        ]
+        ],
+        className='container'
     )
 
 app.layout = layout()
 
-# Callback to update the map figure
+# Callback to update the map figure based on the toggle selection
 @app.callback(
     Output('map-graph', 'figure'),
-    [Input('interval-component', 'n_intervals')]
+    [Input('interval-component', 'n_intervals'),
+     Input('toggle-data-type', 'value')]
 )
-def update_map_figure(n):
-    return update_map()
+def update_map_figure(n, data_type):
+    return update_map(data_type)
 
 # Run the Dash app
 if __name__ == '__main__':
-    app.run_server(debug=False, host='0.0.0.0', port=9000)
+    app.run_server(debug=True, host='0.0.0.0', port=9000)
