@@ -36,9 +36,10 @@ def update_stock():
         j = r.json()
         stock = pd.DataFrame(j['data']['stations'])
 
-        stock['last_reported'] = pd.to_datetime(stock['last_reported'], unit='s', utc=False)
+        stock['last_reported'] = (pd.to_datetime(stock['last_reported'], unit='s', utc=True).dt.tz_convert('US/Eastern')).apply(lambda x: x.strftime('%m-%d-%Y %I:%M %p'))
+
         
-        stock['global_update_time'] = datetime.now(tz=eastern)
+        stock['global_update_time'] = datetime.now(tz=eastern).strftime('%m-%d-%Y %I:%M %p')
         stock['id'] = stock['station_id'].astype(str) + '@' + stock['global_update_time'].astype(str)
         stock.set_index('id', inplace=True)
 
@@ -57,4 +58,4 @@ def handler(event, context):
     return update_stock()
 
 # Uncomment the line below to test the update_stock function locally
-#print(handler('event', 'context'))
+print(handler('event', 'context'))
