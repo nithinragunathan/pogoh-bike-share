@@ -36,7 +36,7 @@ def update_stock():
         j = r.json()
         stock = pd.DataFrame(j['data']['stations'])
 
-        stock['last_reported'] = pd.to_datetime(stock['last_reported'], unit='s')
+        stock['last_reported'] = pd.to_datetime(stock['last_reported'], unit='s', utc=False)
         
         stock['global_update_time'] = datetime.now(tz=eastern)
         stock['id'] = stock['station_id'].astype(str) + '@' + stock['global_update_time'].astype(str)
