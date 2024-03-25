@@ -4,6 +4,7 @@ ARG ENV DEBIAN_FRONTEND noninteractive
 
 ADD requirements.txt .
 ADD app.py .
+ADD config.py .
 
 # install Microsoft SQL Server requirements.
 ENV ACCEPT_EULA=Y

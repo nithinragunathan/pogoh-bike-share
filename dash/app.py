@@ -10,14 +10,20 @@ import plotly.graph_objects as go
 # Create a Dash app
 app = Dash(__name__)
 
-# Data processing
-server = "database-1.czm6aegec3xq.us-east-2.rds.amazonaws.com"
-database = "pogoh"
-username = "master"
-password = "egahIeae$aevnef#4"
-driver = "{ODBC Driver 17 for SQL Server}"
+from config import DATABASE_CONFIG
+db_config = DATABASE_CONFIG
+
 params = urllib.parse.quote_plus(
-    'Driver=%s;Server=tcp:%s,1433;Database=%s;Uid=%s;Pwd={%s};Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=90;pool_pre_ping=true' % (driver, server, database, username, password))
+    'Driver=%s;' % db_config['driver'] +
+    'Server=tcp:%s,1433;' % db_config['server'] +
+    'Database=%s;' % db_config['database'] +
+    'Uid=%s;' % db_config['username'] +
+    'Pwd={%s};' % db_config['password'] +
+    'Encrypt=yes;' +
+    'TrustServerCertificate=yes;' +
+    'Connection Timeout=90;')
+params = urllib.parse.quote_plus(
+    'Driver=%s;Server=tcp:%s,1433;Database=%s;Uid=%s;Pwd={%s};Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=90;pool_pre_ping=true' % (db_config['driver'], db_config['server'], db_config['database'], db_config['username'], db_config['password']))
 
 conn_str = 'mssql+pyodbc:///?odbc_connect=' + params
 engine = sa.create_engine(conn_str)
@@ -73,4 +79,49 @@ def update_map(data_type):
     last_frame_num = len(fig.frames) - 1
 
     fig.layout['sliders'][0]['active'] = last_frame_num  # Set initial frame to the last frame
-    fig = go.Figure(data=fig['frames'][-1]['data'], frames=fig['frames'], 
+    fig = go.Figure(data=fig['frames'][-1]['data'], frames=fig['frames'], layout=fig.layout)
+
+    return fig
+
+
+def layout():
+    return html.Div(
+        style={'backgroundColor': 'black', 'padding': '20px', 'height': '90vh', 'width': '80vw', 'font-family': 'Futura, sans-serif', 'margin': '0'},
+        children=[
+            html.H1('POGOH Bikeshare Availability', style={'textAlign': 'center', 'color': '#FFC433', 'margin-bottom': '20px'}),
+
+            html.Div([
+                dcc.RadioItems(
+                    id='toggle-data-type',
+                    options=[
+                        {'label': 'Bikes', 'value': 'bikes'},
+                        {'label': 'Docks', 'value': 'docks'}
+                    ],
+                    value='bikes',  # Default value
+                    labelStyle={'display': 'inline-block', 'margin-right': '10px', 'color': '#FFC433'}  # Change the font color to #FFC433
+                )
+            ], style={'textAlign': 'center', 'margin-bottom': '20px'}),
+            dcc.Graph(id='map-graph', style={'margin': '0'}),
+            dcc.Interval(
+                id='interval-component',
+                interval=30 * 60 * 1000,  # in milliseconds
+                n_intervals=0
+            )
+        ],
+        className='container'
+    )
+
+app.layout = layout()
+
+# Callback to update the map figure based on the toggle selection
+@app.callback(
+    Output('map-graph', 'figure'),
+    [Input('interval-component', 'n_intervals'),
+     Input('toggle-data-type', 'value')]
+)
+def update_map_figure(n, data_type):
+    return update_map(data_type)
+
+# Run the Dash app
+if __name__ == '__main__':
+    app.run_server(debug=False, host='0.0.0.0', port=9000)

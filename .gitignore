@@ -6,3 +6,4 @@ venv/
 
 # Ignore configuration files with sensitive information
 config.py
+dash/config.py
