@@ -10,5 +10,5 @@ Database: Amazon RDS Microsoft SQL Server
 
 ETL: Dockerized Python on AWS Lambda
 
-Front-End: Dockerized Plotly Dash App run on AWS App Runner
+Front-End: Dockerized Plotly Dash App on AWS App Runner
 
