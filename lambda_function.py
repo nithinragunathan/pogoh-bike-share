@@ -9,17 +9,15 @@ import pytz
 # Define the Eastern Time zone
 eastern = pytz.timezone('America/New_York')
 
-server = "database-1.czm6aegec3xq.us-east-2.rds.amazonaws.com"
-database = "pogoh"
-username = "master"
-password = "egahIeae$aevnef#4"
-driver = "{ODBC Driver 18 for SQL Server}"
+from config import DATABASE_CONFIG
+db_config = DATABASE_CONFIG
+
 params = urllib.parse.quote_plus(
-    'Driver=%s;' % driver +
-    'Server=tcp:%s,1433;' % server +
-    'Database=%s;' % database +
-    'Uid=%s;' % username +
-    'Pwd={%s};' % password +
+    'Driver=%s;' % db_config['driver'] +
+    'Server=tcp:%s,1433;' % db_config['server'] +
+    'Database=%s;' % db_config['database'] +
+    'Uid=%s;' % db_config['username'] +
+    'Pwd={%s};' % db_config['password'] +
     'Encrypt=yes;' +
     'TrustServerCertificate=yes;' +
     'Connection Timeout=90;')
@@ -59,5 +57,4 @@ def handler(event, context):
     print(event)
     return update_stock()
 
-# Uncomment the line below to test the update_stock function locally
-#print(handler('event', 'context'))
+# Uncomment 

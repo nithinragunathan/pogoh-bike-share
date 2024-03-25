@@ -22,6 +22,7 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
 RUN apt-get -y clean
 
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
+COPY config.py ${LAMBDA_TASK_ROOT}
 
 # Install the specified packages
 RUN pip install -r requirements.txt
