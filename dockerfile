@@ -62,4 +62,5 @@ COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
 
 # Set runtime interface client as default command for the container runtime
 ENTRYPOINT [ "/usr/local/bin/python", "-m", "awslambdaric" ]
-# Pass the name of the function handler as an argument to the runtim
+# Pass the name of the function handler as an argument to the runtime
+CMD [ "lambda_function.handler" ]
