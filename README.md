@@ -14,4 +14,4 @@ Front-End: Dockerized Plotly Dash App on AWS App Runner
 
 The data refreshes every 30 minutes, at :20 and :50 of each hour.
 
-![alt text](image.png)
+![alt text](image-1.png)
